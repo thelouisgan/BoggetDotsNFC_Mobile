@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Translation instructions can be found in the Readme -->
+<resources
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:ignore="MissingTranslation, ExtraTranslation">
+    <string name="app_name">BoggetArcade</string>
+    <string name="intro_message">Welcome to the Bogget arcade! Made by Louis Gan.\n\nPlease start by scanning your membership card.\n\nThis app is a fork of https://github.com/nadam/nfc-reader and by https://ganlouis.com/</string>
+    <string name="no_nfc">NFC isn\'t supported on this device</string>
+    <string name="clear_all">Clear all</string>
+    <string name="close_app">Close app</string>
+</resources>
