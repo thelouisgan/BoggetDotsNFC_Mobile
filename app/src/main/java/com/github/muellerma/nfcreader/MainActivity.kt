@@ -18,6 +18,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import com.github.muellerma.nfcreader.record.ParsedNdefRecord
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
@@ -30,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.android.material.card.MaterialCardView
 import java.lang.reflect.Modifier
 
 class MainActivity : AppCompatActivity() {
@@ -37,14 +39,16 @@ class MainActivity : AppCompatActivity() {
     private var tagList: LinearLayout? = null
     private var nfcAdapter: NfcAdapter? = null
 
-
+    private var cardContent: CardView? = null
+    private var cardTitle: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val cardContent = findViewById<TextView>(R.id.card_content)
-        cardContent.text = "Hello, world!"
+        cardContent = findViewById<MaterialCardView>(R.id.card_view)
+        cardTitle = findViewById<TextView>(R.id.card_content)
+        cardTitle!!.text = "Scan card to read data."
 
         tagList = findViewById<View>(R.id.list) as LinearLayout
         resolveIntent(intent)
@@ -244,11 +248,15 @@ class MainActivity : AppCompatActivity() {
         val now = Date()
         val records = NdefMessageParser.parse(msgs[0])
         val size = records.size
+
         for (i in 0 until size) {
             val timeView = TextView(this)
             timeView.text = TIME_FORMAT.format(now)
             content!!.addView(timeView, 0)
             val record: ParsedNdefRecord = records[i]
+            //cardTitle!!.text = String(msgs[0].records[0].payload)
+            cardTitle!!.text = String((msgs[0].records[0].payload), 3, (msgs[0].records[0].payload).size - 3, Charsets.UTF_8)
+            //cardTitle!!.text = String((records[i] as NdefMessage).records[0].payload)
             content.addView(record.getView(this, inflater, content, i), 1 + i)
             content.addView(inflater.inflate(R.layout.tag_divider, content, false), 2 + i)
         }
