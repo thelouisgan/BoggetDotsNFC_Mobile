@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "26247490244",
+    "firebase_url": "https://ganlouisdotcom-default-rtdb.firebaseio.com",
+    "project_id": "ganlouisdotcom",
+    "storage_bucket": "ganlouisdotcom.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:26247490244:android:fc686dac67a5d341f9f791",
+        "android_client_info": {
+          "package_name": "com.ganlouis.nfc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "26247490244-asi9rri8hfa5anqrl7bualtkbkafqsj2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4oeV31CfCSkqtshfFFLzcDgVte3GKa0M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "26247490244-asi9rri8hfa5anqrl7bualtkbkafqsj2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

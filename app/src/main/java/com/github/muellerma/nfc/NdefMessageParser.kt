@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.github.muellerma.nfcreader
+package com.ganlouis.nfc
 
 import android.app.Activity
 import android.nfc.NdefMessage
@@ -22,10 +22,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.github.muellerma.nfcreader.record.ParsedNdefRecord
-import com.github.muellerma.nfcreader.record.SmartPoster
-import com.github.muellerma.nfcreader.record.TextRecord
-import com.github.muellerma.nfcreader.record.UriRecord
+import com.github.muellerma.nfc.record.ParsedNdefRecord
+import com.github.muellerma.nfc.record.SmartPoster
+import com.github.muellerma.nfc.record.TextRecord
+import com.github.muellerma.nfc.record.UriRecord
 
 /**
  * Utility class for creating [ParsedNdefMessage]s.

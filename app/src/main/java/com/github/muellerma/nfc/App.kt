@@ -1,4 +1,4 @@
-package com.github.muellerma.nfcreader
+package com.ganlouis.nfc
 
 import android.app.Application
 import com.google.android.material.color.DynamicColors

@@ -1,4 +1,4 @@
-package com.github.muellerma.nfcreader
+package com.ganlouis.nfc
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -19,20 +19,15 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import com.github.muellerma.nfcreader.record.ParsedNdefRecord
+import com.github.muellerma.nfc.record.ParsedNdefRecord
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import com.ganlouis.nfc.PendingIntent_Mutable
 import com.google.android.material.card.MaterialCardView
-import java.lang.reflect.Modifier
+import com.google.firebase.Firebase
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.database
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,9 +37,13 @@ class MainActivity : AppCompatActivity() {
     private var cardContent: CardView? = null
     private var cardTitle: TextView? = null
 
+    private lateinit var database: DatabaseReference
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        database = Firebase.database.reference
 
         cardContent = findViewById<MaterialCardView>(R.id.card_view)
         cardTitle = findViewById<TextView>(R.id.card_content)
@@ -112,13 +111,13 @@ class MainActivity : AppCompatActivity() {
         )
         if (intent.action in validActions) {
             // TODO
-            val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
+            //val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
             val messages = mutableListOf<NdefMessage>()
-            if (rawMsgs != null) {
+            /*if (rawMsgs != null) {
                 rawMsgs.forEach {
                     messages.add(it as NdefMessage)
                 }
-            } else {
+            } else {*/
                 // Unknown tag type
                 val empty = ByteArray(0)
                 val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
@@ -127,19 +126,19 @@ class MainActivity : AppCompatActivity() {
                 val record = NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload)
                 val msg = NdefMessage(arrayOf(record))
                 messages.add(msg)
-            }
+            //}
             // Setup the views
             buildTagViews(messages)
         }
     }
 
-    private fun dumpTagData(tag: Tag): String {
+    /*private fun dumpTagData(tag: Tag): String {
         val sb = StringBuilder()
         val id = tag.id
         return ""
-    }
+    }*/
 
-    /*private fun dumpTagData(tag: Tag): String {
+    private fun dumpTagData(tag: Tag): String {
         val sb = StringBuilder()
         val id = tag.id
         sb.append("ID (hex): ").append(toHex(id)).append('\n')
@@ -186,7 +185,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return sb.toString()
-    }*/
+    }
 
     private fun toHex(bytes: ByteArray): String {
         val sb = StringBuilder()
@@ -205,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         val sb = StringBuilder()
         for (i in bytes.indices) {
             if (i > 0) {
-                sb.append(" ")
+                sb.append(":")
             }
             val b = bytes[i].toInt() and 0xff
             if (b < 0x10) sb.append('0')

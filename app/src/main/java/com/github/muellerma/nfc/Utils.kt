@@ -1,4 +1,4 @@
-package com.github.muellerma.nfcreader
+package com.ganlouis.nfc
 
 import android.app.PendingIntent
 import android.content.Intent

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.github.muellerma.nfcreader.record
+package com.github.muellerma.nfc.record
 
 import android.app.Activity
 import android.nfc.NdefRecord
@@ -21,7 +21,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.github.muellerma.nfcreader.R
+import com.ganlouis.nfc.R
 import java.io.UnsupportedEncodingException
 import java.nio.charset.StandardCharsets
 import java.util.*
