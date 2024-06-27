@@ -19,11 +19,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import com.ganlouis.nfc.models.Card
 import com.github.muellerma.nfc.record.ParsedNdefRecord
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
-import com.ganlouis.nfc.PendingIntent_Mutable
 import com.google.android.material.card.MaterialCardView
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
@@ -111,13 +111,26 @@ class MainActivity : AppCompatActivity() {
         )
         if (intent.action in validActions) {
             // TODO
-            //val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
+            val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
             val messages = mutableListOf<NdefMessage>()
-            /*if (rawMsgs != null) {
-                rawMsgs.forEach {
-                    messages.add(it as NdefMessage)
+            //if (rawMsgs != null) {
+
+            val sb = StringBuilder()
+
+            //for each item in messages, append to message
+            if (rawMsgs != null) {
+                for (i in rawMsgs.indices) {
+                    val msg = rawMsgs?.get(i) as NdefMessage
+                    for (record in msg.records) {
+                        val payload = record.payload
+                        for (b in payload) {
+                            sb.append(String.format("%02X", b))
+                        }
+                    }
                 }
-            } else {*/
+            }
+
+            /*} else {*/
                 // Unknown tag type
                 val empty = ByteArray(0)
                 val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
@@ -126,6 +139,10 @@ class MainActivity : AppCompatActivity() {
                 val record = NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload)
                 val msg = NdefMessage(arrayOf(record))
                 messages.add(msg)
+
+                val balance = Integer.parseInt(sb.toString().substring(0, 8), 16)
+
+                Card(toReversedHex(tag.id), "", "", false, balance)
             //}
             // Setup the views
             buildTagViews(messages)
