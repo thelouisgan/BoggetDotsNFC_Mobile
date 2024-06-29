@@ -28,6 +28,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
+import java.lang.Double.toHexString
 
 class MainActivity : AppCompatActivity() {
 
@@ -116,17 +117,20 @@ class MainActivity : AppCompatActivity() {
             //if (rawMsgs != null) {
 
             val sb = StringBuilder()
+            val dataArray = byteArrayOf();
 
             //for each item in messages, append to message
             if (rawMsgs != null) {
                 for (i in rawMsgs.indices) {
                     val msg = rawMsgs?.get(i) as NdefMessage
+                    messages.add(msg)
+                    /*
                     for (record in msg.records) {
                         val payload = record.payload
                         for (b in payload) {
-                            sb.append(String.format("%02X", b))
+                            dataArray.(b)
                         }
-                    }
+                    }*/
                 }
             }
 
@@ -140,9 +144,21 @@ class MainActivity : AppCompatActivity() {
                 val msg = NdefMessage(arrayOf(record))
                 messages.add(msg)
 
-                val balance = Integer.parseInt(sb.toString().substring(0, 8), 16)
+                //val balance = intent.getByteArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
+                //toReversedHex(tag.id)
 
-                Card(toReversedHex(tag.id), "", "", false, balance)
+                val cardID = ((rawMsgs?.get(0) as NdefMessage).records[0].payload)
+                val cardType = rawMsgs?.get(1).toString()
+                val cardHolder = rawMsgs?.get(2).toString()
+                val tampProtected = (rawMsgs?.get(3).toString()).toBoolean()
+                val eDots = (rawMsgs?.get(4).toString().toInt())
+
+                val card = Card(rawMsgs?.get(0).toString(),
+                                rawMsgs?.get(1).toString(),
+                                rawMsgs?.get(2).toString(),
+                                (rawMsgs?.get(3).toString()).toBoolean(),
+                                (rawMsgs?.get(4).toString().toInt())
+                )
             //}
             // Setup the views
             buildTagViews(messages)
