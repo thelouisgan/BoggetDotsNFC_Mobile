@@ -17,6 +17,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.ganlouis.nfc.models.Card
@@ -111,58 +112,74 @@ class MainActivity : AppCompatActivity() {
             NfcAdapter.ACTION_NDEF_DISCOVERED
         )
         if (intent.action in validActions) {
-            // TODO
+            val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG) ?: return
+            val idReversedHex = toReversedHex(tag.id)
+
+            // Read NDEF Message if available
             val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
             val messages = mutableListOf<NdefMessage>()
-            //if (rawMsgs != null) {
 
-            val sb = StringBuilder()
-            val dataArray = byteArrayOf();
-
-            //for each item in messages, append to message
             if (rawMsgs != null) {
-                for (i in rawMsgs.indices) {
-                    val msg = rawMsgs?.get(i) as NdefMessage
-                    messages.add(msg)
-                    /*
-                    for (record in msg.records) {
-                        val payload = record.payload
-                        for (b in payload) {
-                            dataArray.(b)
-                        }
-                    }*/
+                for (rawMsg in rawMsgs) {
+                    if (rawMsg is NdefMessage) {
+                        messages.add(rawMsg)
+                    }
                 }
             }
 
-            /*} else {*/
-                // Unknown tag type
-                val empty = ByteArray(0)
-                val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
-                val tag = intent.parcelable<Tag>(NfcAdapter.EXTRA_TAG) ?: return
-                val payload = dumpTagData(tag).toByteArray()
-                val record = NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload)
-                val msg = NdefMessage(arrayOf(record))
-                messages.add(msg)
+            if (messages.isNotEmpty()) {
+                // Process NDEF Message
+                val records = messages[0].records
+                if (records.size >= 5) {
+                    val card = Card(
+                        BoggetID = String(records[0].payload, 3, records[0].payload.size - 3, Charsets.UTF_8),
+                        CardType = String(records[1].payload, 3, records[1].payload.size - 3, Charsets.UTF_8),
+                        Cardholder = String(records[2].payload, 3, records[2].payload.size - 3, Charsets.UTF_8),
+                        TAMPprotected = String(records[3].payload, 3, records[3].payload.size - 3, Charsets.UTF_8).toBoolean(),
+                        eDots = String(records[4].payload, 3, records[4].payload.size - 3, Charsets.UTF_8).toInt()
+                    )
 
-                //val balance = intent.getByteArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
-                //toReversedHex(tag.id)
+                    // Display card information
+                    displayCardInfo(card, idReversedHex)
 
-                val cardID = ((rawMsgs?.get(0) as NdefMessage).records[0].payload)
-                val cardType = rawMsgs?.get(1).toString()
-                val cardHolder = rawMsgs?.get(2).toString()
-                val tampProtected = (rawMsgs?.get(3).toString()).toBoolean()
-                val eDots = (rawMsgs?.get(4).toString().toInt())
+                    // TODO: Add code to match idReversedHex with Firebase database
+                } else {
+                    showToast("Insufficient records in NFC tag")
+                }
+            } else {
+                // Handle non-NDEF formatted tag
+                val tagData = dumpTagData(tag)
+                displayRawTagData(tagData, idReversedHex)
+            }
 
-                val card = Card(rawMsgs?.get(0).toString(),
-                                rawMsgs?.get(1).toString(),
-                                rawMsgs?.get(2).toString(),
-                                (rawMsgs?.get(3).toString()).toBoolean(),
-                                (rawMsgs?.get(4).toString().toInt())
-                )
-            //}
-            // Setup the views
+            // Build views for all records (if any)
             buildTagViews(messages)
         }
+    }
+
+
+    private fun displayCardInfo(card: Card, idReversedHex: String) {
+        val cardInfo = """
+        ID (reversed hex): $idReversedHex
+        BoggetID: ${card.BoggetID}
+        Card Type: ${card.CardType}
+        Cardholder: ${card.Cardholder}
+        TAMP Protected: ${card.TAMPprotected}
+        eDots: ${card.eDots}
+    """.trimIndent()
+
+        cardTitle?.text = cardInfo
+
+
+    }
+
+    private fun displayRawTagData(tagData: String, idReversedHex: String) {
+        val displayText = "ID (reversed hex): $idReversedHex\n\n$tagData"
+        cardTitle?.text = displayText
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     /*private fun dumpTagData(tag: Tag): String {
