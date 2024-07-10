@@ -28,6 +28,7 @@ import java.util.*
 import com.google.android.material.card.MaterialCardView
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.database
 import java.lang.Double.toHexString
 
@@ -170,7 +171,17 @@ class MainActivity : AppCompatActivity() {
 
         cardTitle?.text = cardInfo
 
-
+        val databaseReference = FirebaseDatabase.getInstance().reference
+        databaseReference.child(idReversedHex).get().addOnSuccessListener { dataSnapshot ->
+            if (dataSnapshot.exists()) {
+                showToast("Card found in database")
+                //val firebaseCard = dataSnapshot.getValue(Card::class.java)
+            } else {
+                showToast("Card not found in database")
+            }
+        }.addOnFailureListener {
+            showToast("Failed to read from database")
+        }
     }
 
     private fun displayRawTagData(tagData: String, idReversedHex: String) {
