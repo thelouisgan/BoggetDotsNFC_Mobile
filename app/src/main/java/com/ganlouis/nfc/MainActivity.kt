@@ -133,11 +133,11 @@ class MainActivity : AppCompatActivity() {
                 val records = messages[0].records
                 if (records.size >= 5) {
                     val card = Card(
-                        BoggetID = String(records[0].payload, 3, records[0].payload.size - 3, Charsets.UTF_8),
-                        CardType = String(records[1].payload, 3, records[1].payload.size - 3, Charsets.UTF_8),
-                        Cardholder = String(records[2].payload, 3, records[2].payload.size - 3, Charsets.UTF_8),
-                        TAMPprotected = String(records[3].payload, 3, records[3].payload.size - 3, Charsets.UTF_8).toBoolean(),
-                        eDots = String(records[4].payload, 3, records[4].payload.size - 3, Charsets.UTF_8).toInt()
+                        boggetID = String(records[0].payload, 3, records[0].payload.size - 3, Charsets.UTF_8),
+                        cardType = String(records[1].payload, 3, records[1].payload.size - 3, Charsets.UTF_8),
+                        cardholder = String(records[2].payload, 3, records[2].payload.size - 3, Charsets.UTF_8),
+                        tampProtected = String(records[3].payload, 3, records[3].payload.size - 3, Charsets.UTF_8).toBoolean(),
+                        edots = String(records[4].payload, 3, records[4].payload.size - 3, Charsets.UTF_8).toInt()
                     )
 
                     // Display card information
@@ -161,12 +161,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun displayCardInfo(card: Card, idReversedHex: String) {
         val cardInfo = """
-        ID (reversed hex): $idReversedHex
-        BoggetID: ${card.BoggetID}
-        Card Type: ${card.CardType}
-        Cardholder: ${card.Cardholder}
-        TAMP Protected: ${card.TAMPprotected}
-        eDots: ${card.eDots}
+    ID (reversed hex): $idReversedHex
+    Bogget ID: ${card.boggetID}
+    Card Type: ${card.cardType}
+    Cardholder: ${card.cardholder}
+    TAMP Protected: ${card.tampProtected}
+    eDots: ${card.edots}
     """.trimIndent()
 
         cardTitle?.text = cardInfo
@@ -175,13 +175,68 @@ class MainActivity : AppCompatActivity() {
         databaseReference.child(idReversedHex).get().addOnSuccessListener { dataSnapshot ->
             if (dataSnapshot.exists()) {
                 showToast("Card found in database")
-                //val firebaseCard = dataSnapshot.getValue(Card::class.java)
+                val firebaseCard = dataSnapshot.getValue(Card::class.java)
+
+                if (firebaseCard != null) {
+                    val differences = mutableListOf<String>()
+
+                    if (firebaseCard.boggetID != card.boggetID) differences.add("Bogget ID")
+                    if (firebaseCard.cardType != card.cardType) differences.add("Card Type")
+                    if (firebaseCard.cardholder != card.cardholder) differences.add("Cardholder")
+                    if (firebaseCard.tampProtected != card.tampProtected) differences.add("TAMP Protected")
+                    if (firebaseCard.edots != card.edots) differences.add("eDots")
+
+                    if (differences.isNotEmpty()) {
+                        showOverwriteDialog(card, idReversedHex, differences)
+                    } else {
+                        showToast("Card data matches database records")
+                    }
+                }
             } else {
                 showToast("Card not found in database")
+                promptToAddNewCard(card, idReversedHex)
             }
         }.addOnFailureListener {
             showToast("Failed to read from database")
         }
+    }
+
+    private fun showOverwriteDialog(card: Card, idReversedHex: String, differences: List<String>) {
+        val diffString = differences.joinToString(", ")
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Sync Data")
+            .setMessage("The following fields differ from the database: $diffString. Do you want to overwrite the database with the NFC data?")
+            .setPositiveButton("Overwrite") { _, _ ->
+                updateDatabaseWithCardData(card, idReversedHex)
+            }
+            .setNegativeButton("Keep Database Data") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun updateDatabaseWithCardData(card: Card, idReversedHex: String) {
+        val databaseReference = FirebaseDatabase.getInstance().reference
+        databaseReference.child(idReversedHex).setValue(card)
+            .addOnSuccessListener {
+                showToast("Sync successful")
+            }
+            .addOnFailureListener {
+                showToast("Failed to update database")
+            }
+    }
+
+    private fun promptToAddNewCard(card: Card, idReversedHex: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("New Card")
+            .setMessage("Welcome to BoggetDots! Do you want to add this card to the database?")
+            .setPositiveButton("Add") { _, _ ->
+                updateDatabaseWithCardData(card, idReversedHex)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun displayRawTagData(tagData: String, idReversedHex: String) {
