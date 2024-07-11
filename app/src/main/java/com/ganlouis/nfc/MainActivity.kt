@@ -36,8 +36,12 @@ class MainActivity : AppCompatActivity() {
     private var tagList: LinearLayout? = null
     private var nfcAdapter: NfcAdapter? = null
 
-    private var cardContent: CardView? = null
-    private var cardTitle: TextView? = null
+    private var cardContent: MaterialCardView? = null
+    private var cardTypeText: TextView? = null
+    private var idReversedHexText: TextView? = null
+    private var tampProtectedText: TextView? = null
+    private var cardholderText: TextView? = null
+    private var eDotsText: TextView? = null
 
     private lateinit var database: DatabaseReference
 
@@ -47,9 +51,12 @@ class MainActivity : AppCompatActivity() {
 
         database = Firebase.database.reference
 
-        cardContent = findViewById<MaterialCardView>(R.id.card_view)
-        cardTitle = findViewById<TextView>(R.id.card_content)
-        cardTitle!!.text = "Scan card to read data."
+        cardContent = findViewById(R.id.card_view)
+        cardTypeText = findViewById(R.id.card_type_text)
+        idReversedHexText = findViewById(R.id.id_reversed_hex_text)
+        tampProtectedText = findViewById(R.id.tamp_protected_text)
+        cardholderText = findViewById(R.id.cardholder_text)
+        eDotsText = findViewById(R.id.edots_text)
 
         tagList = findViewById<View>(R.id.list) as LinearLayout
         resolveIntent(intent)
@@ -58,7 +65,6 @@ class MainActivity : AppCompatActivity() {
             showNoNfcDialog()
             return
         }
-
     }
 
     override fun onResume() {
@@ -159,18 +165,13 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun displayCardInfo(card: Card, idReversedHex: String) {
-        val cardInfo = """
-    <b>ID (reversed hex) </b> $idReversedHex<br>
-    <b>Bogget ID </b> ${card.boggetID}<br>
-    <b>Card Type </b> ${card.cardType}<br>
-    <b>Cardholder </b> ${card.cardholder}<br>
-    <b>TAMP Protected </b> ${card.tampProtected}<br>
-    <b>eDots </b> ${card.edots}
-""".trimIndent()
+        cardTypeText?.text = card.cardType
+        idReversedHexText?.text = idReversedHex
+        tampProtectedText?.text = "TAMP Protected: ${card.tampProtected}"
+        cardholderText?.text = card.cardholder
+        eDotsText?.text = card.edots.toString()
 
-        cardTitle?.text = HtmlCompat.fromHtml(cardInfo, HtmlCompat.FROM_HTML_MODE_LEGACY)
-
-        //Get firebase data
+        // Get firebase data
         database.child(idReversedHex).get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
                 val firebaseCard = snapshot.getValue(Card::class.java)
@@ -251,7 +252,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun displayRawTagData(tagData: String, idReversedHex: String) {
         val displayText = "ID (reversed hex): $idReversedHex\n\n$tagData"
-        cardTitle?.text = displayText
+        idReversedHexText?.text = displayText
     }
 
     private fun showToast(message: String) {
@@ -380,7 +381,7 @@ class MainActivity : AppCompatActivity() {
             content!!.addView(timeView, 0)
             val record: ParsedNdefRecord = records[i]
             //cardTitle!!.text = String(msgs[0].records[0].payload)
-            cardTitle!!.text = String((msgs[0].records[0].payload), 3, (msgs[0].records[0].payload).size - 3, Charsets.UTF_8)
+            idReversedHexText?.text = String((msgs[0].records[0].payload), 3, (msgs[0].records[0].payload).size - 3, Charsets.UTF_8)
             //cardTitle!!.text = String((records[i] as NdefMessage).records[0].payload)
             content.addView(record.getView(this, inflater, content, i), 1 + i)
             content.addView(inflater.inflate(R.layout.tag_divider, content, false), 2 + i)
