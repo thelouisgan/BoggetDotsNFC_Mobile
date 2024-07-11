@@ -53,42 +53,56 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceHeadline6"
-                            android:text="Please scan your BoggetDots card" />
+                            android:text="Card Type" />
 
                     <TextView
                             android:id="@+id/id_reversed_hex_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBody2"
-                            android:text="BoggetID" />
+                            android:text="ID(reversed hex)" />
 
                     <TextView
                             android:id="@+id/tamp_protected_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBody2"
-                            android:text="TAMP Protection" />
+                            android:text="TAMP Protected" />
 
                     <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal">
 
-
-                        <TextView
-                                android:id="@+id/cardholder_text"
+                        <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:textAppearance="?attr/textAppearanceBody1"
-                                android:text="Cardholder" />
+                                android:orientation="vertical">
+
+                            <TextView
+                                    android:id="@+id/bogget_id_text"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceBody2"
+                                    android:text="BoggetID" />
+
+                            <TextView
+                                    android:id="@+id/cardholder_text"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceBody1"
+                                    android:text="Cardholder name" />
+
+                        </LinearLayout>
 
                         <TextView
                                 android:id="@+id/edots_text"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textAppearance="?attr/textAppearanceHeadline5"
-                                android:text="BoggetDots" />
+                                android:textAppearance="?attr/textAppearanceHeadline4"
+                                android:text="383"
+                                android:layout_gravity="center_vertical|end" />
 
                     </LinearLayout>
 
@@ -97,5 +111,9 @@
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
+
+
     </LinearLayout>
+
+
 </ScrollView>

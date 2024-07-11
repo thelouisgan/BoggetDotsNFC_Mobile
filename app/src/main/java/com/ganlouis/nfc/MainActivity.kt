@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private var cardTypeText: TextView? = null
     private var idReversedHexText: TextView? = null
     private var tampProtectedText: TextView? = null
+    private var boggetIdText: TextView? = null
     private var cardholderText: TextView? = null
     private var eDotsText: TextView? = null
 
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         cardTypeText = findViewById(R.id.card_type_text)
         idReversedHexText = findViewById(R.id.id_reversed_hex_text)
         tampProtectedText = findViewById(R.id.tamp_protected_text)
+        boggetIdText = findViewById(R.id.bogget_id_text)
         cardholderText = findViewById(R.id.cardholder_text)
         eDotsText = findViewById(R.id.edots_text)
 
@@ -168,6 +170,7 @@ class MainActivity : AppCompatActivity() {
         cardTypeText?.text = card.cardType
         idReversedHexText?.text = idReversedHex
         tampProtectedText?.text = "TAMP Protected: ${card.tampProtected}"
+        boggetIdText?.text = card.boggetID
         cardholderText?.text = card.cardholder
         eDotsText?.text = card.edots.toString()
 
@@ -189,6 +192,7 @@ class MainActivity : AppCompatActivity() {
             showToast("Failed to read data from database: ${exception.message}")
         }
     }
+
 
     private fun showOverwriteDialog(card: Card, firebaseCard: Card, idReversedHex: String) {
         val differences = mutableListOf<Pair<String, Pair<String, String>>>()
