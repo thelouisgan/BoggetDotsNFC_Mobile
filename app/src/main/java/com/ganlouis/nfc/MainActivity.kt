@@ -27,6 +27,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -173,51 +174,64 @@ class MainActivity : AppCompatActivity() {
         cardTitle?.text = cardInfo
 
         //Get firebase data
-        database.child(idReversedHex).get().addOnSuccessListener {
-            if (it.exists()) {
-                val firebaseCard = it.getValue(Card::class.java)
+        database.child(idReversedHex).get().addOnSuccessListener { snapshot ->
+            if (snapshot.exists()) {
+                val firebaseCard = snapshot.getValue(Card::class.java)
                 if (firebaseCard != null) {
-                    // Compare the card data with the Firebase data
-                    val differences = mutableListOf<String>()
-                    if (card.boggetID != firebaseCard.boggetID) {
-                        differences.add("Bogget ID")
-                    }
-                    if (card.cardType != firebaseCard.cardType) {
-                        differences.add("Card Type")
-                    }
-                    if (card.cardholder != firebaseCard.cardholder) {
-                        differences.add("Cardholder")
-                    }
-                    if (card.tampProtected != firebaseCard.tampProtected) {
-                        differences.add("TAMP Protected")
-                    }
-                    if (card.edots != firebaseCard.edots) {
-                        differences.add("eDots")
-                    }
-
-                    if (differences.isNotEmpty()) {
-                        showOverwriteDialog(card, idReversedHex, differences)
+                    if (card != firebaseCard) {
+                        showOverwriteDialog(card, firebaseCard, idReversedHex)
+                    } else {
+                        showToast("Card data matches database")
                     }
                 }
             } else {
                 promptToAddNewCard(card, idReversedHex)
             }
+        }.addOnFailureListener { exception ->
+            Log.e("DatabaseRead", "Failed to read data from database", exception)
+            showToast("Failed to read data from database: ${exception.message}")
         }
-            .addOnFailureListener { exception ->
-                Log.e("DatabaseRead", "Failed to read data from database", exception)
-                showToast("Failed to read data from database: ${exception.message}")
-            }
     }
 
-    private fun showOverwriteDialog(card: Card, idReversedHex: String, differences: List<String>) {
+    private fun showOverwriteDialog(card: Card, firebaseCard: Card, idReversedHex: String) {
+        val differences = mutableListOf<String>()
+        if (card.boggetID != firebaseCard.boggetID) differences.add("Bogget ID")
+        if (card.cardType != firebaseCard.cardType) differences.add("Card Type")
+        if (card.cardholder != firebaseCard.cardholder) differences.add("Cardholder")
+        if (card.tampProtected != firebaseCard.tampProtected) differences.add("TAMP Protected")
+        if (card.edots != firebaseCard.edots) differences.add("eDots")
+
         val diffString = differences.joinToString(", ")
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_data_comparison, null)
+        val dataComparisonTextView = dialogView.findViewById<TextView>(R.id.dataComparisonTextView)
+
+        val comparisonText = """
+        NFC Card Data:
+        Bogget ID: ${card.boggetID}
+        Card Type: ${card.cardType}
+        Cardholder: ${card.cardholder}
+        TAMP Protected: ${card.tampProtected}
+        eDots: ${card.edots}
+        
+        Database Data:
+        Bogget ID: ${firebaseCard.boggetID}
+        Card Type: ${firebaseCard.cardType}
+        Cardholder: ${firebaseCard.cardholder}
+        TAMP Protected: ${firebaseCard.tampProtected}
+        eDots: ${firebaseCard.edots}
+    """.trimIndent()
+
+        dataComparisonTextView.text = comparisonText
+
         MaterialAlertDialogBuilder(this)
-            .setTitle("Sync Data")
-            .setMessage("The following fields differ from the database: $diffString. Do you want to overwrite the database with the NFC data?")
-            .setPositiveButton("Overwrite") { _, _ ->
+            .setTitle("Sync Cards")
+            .setView(dialogView)
+            .setMessage("Your BoggetDots Membership Card has some newer records: $diffString. Do you want to update the database with your BoggetDots card?")
+            .setPositiveButton("Update") { _, _ ->
                 updateDatabaseWithCardData(card, idReversedHex)
             }
-            .setNegativeButton("Keep Database Data") { dialog, _ ->
+            .setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
