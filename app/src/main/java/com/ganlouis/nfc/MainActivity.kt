@@ -3,7 +3,6 @@ package com.ganlouis.nfc
 import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NdefMessage
-import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
@@ -11,7 +10,6 @@ import android.nfc.tech.MifareUltralight
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -21,18 +19,17 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.text.HtmlCompat
 import com.ganlouis.nfc.models.Card
 import com.github.muellerma.nfc.record.ParsedNdefRecord
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.chip.Chip
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.database
-import java.lang.Double.toHexString
 
 class MainActivity : AppCompatActivity() {
 
@@ -156,22 +153,22 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Build views for all records (if any)
-            buildTagViews(messages)
+            //buildTagViews(messages)
         }
     }
 
 
     private fun displayCardInfo(card: Card, idReversedHex: String) {
         val cardInfo = """
-    ID (reversed hex): $idReversedHex
-    Bogget ID: ${card.boggetID}
-    Card Type: ${card.cardType}
-    Cardholder: ${card.cardholder}
-    TAMP Protected: ${card.tampProtected}
-    eDots: ${card.edots}
-    """.trimIndent()
+    <b>ID (reversed hex) </b> $idReversedHex<br>
+    <b>Bogget ID </b> ${card.boggetID}<br>
+    <b>Card Type </b> ${card.cardType}<br>
+    <b>Cardholder </b> ${card.cardholder}<br>
+    <b>TAMP Protected </b> ${card.tampProtected}<br>
+    <b>eDots </b> ${card.edots}
+""".trimIndent()
 
-        cardTitle?.text = cardInfo
+        cardTitle?.text = HtmlCompat.fromHtml(cardInfo, HtmlCompat.FROM_HTML_MODE_LEGACY)
 
         //Get firebase data
         database.child(idReversedHex).get().addOnSuccessListener { snapshot ->
@@ -188,46 +185,37 @@ class MainActivity : AppCompatActivity() {
                 promptToAddNewCard(card, idReversedHex)
             }
         }.addOnFailureListener { exception ->
-            Log.e("DatabaseRead", "Failed to read data from database", exception)
             showToast("Failed to read data from database: ${exception.message}")
         }
     }
 
     private fun showOverwriteDialog(card: Card, firebaseCard: Card, idReversedHex: String) {
-        val differences = mutableListOf<String>()
-        if (card.boggetID != firebaseCard.boggetID) differences.add("Bogget ID")
-        if (card.cardType != firebaseCard.cardType) differences.add("Card Type")
-        if (card.cardholder != firebaseCard.cardholder) differences.add("Cardholder")
-        if (card.tampProtected != firebaseCard.tampProtected) differences.add("TAMP Protected")
-        if (card.edots != firebaseCard.edots) differences.add("eDots")
-
-        val diffString = differences.joinToString(", ")
+        val differences = mutableListOf<Pair<String, Pair<String, String>>>()
+        if (card.boggetID != firebaseCard.boggetID) differences.add("Bogget ID" to (card.boggetID to firebaseCard.boggetID))
+        if (card.cardType != firebaseCard.cardType) differences.add("Card Type" to (card.cardType to firebaseCard.cardType))
+        if (card.cardholder != firebaseCard.cardholder) differences.add("Cardholder" to (card.cardholder to firebaseCard.cardholder))
+        if (card.tampProtected != firebaseCard.tampProtected) differences.add("TAMP Protected" to (card.tampProtected.toString() to firebaseCard.tampProtected.toString()))
+        if (card.edots != firebaseCard.edots) differences.add("eDots" to (card.edots.toString() to firebaseCard.edots.toString()))
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_data_comparison, null)
         val dataComparisonTextView = dialogView.findViewById<TextView>(R.id.dataComparisonTextView)
 
-        val comparisonText = """
-        NFC Card Data:
-        Bogget ID: ${card.boggetID}
-        Card Type: ${card.cardType}
-        Cardholder: ${card.cardholder}
-        TAMP Protected: ${card.tampProtected}
-        eDots: ${card.edots}
-        
-        Database Data:
-        Bogget ID: ${firebaseCard.boggetID}
-        Card Type: ${firebaseCard.cardType}
-        Cardholder: ${firebaseCard.cardholder}
-        TAMP Protected: ${firebaseCard.tampProtected}
-        eDots: ${firebaseCard.edots}
-    """.trimIndent()
+        val comparisonText = buildString {
+            differences.forEach { (field, values) ->
+                appendLine("$field:")
+                appendLine("  NFC Card: ${values.first}")
+                appendLine("  Database: ${values.second}")
+                appendLine()
+            }
+        }.trim()
 
         dataComparisonTextView.text = comparisonText
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Sync Cards")
             .setView(dialogView)
-            .setMessage("Your BoggetDots Membership Card has some newer records: $diffString. Do you want to update the database with your BoggetDots card?")
+            .setIcon(R.drawable.ic_boggetdots) // Add this line to set the icon
+            .setMessage("Your BoggetDots Membership Card has some newer records. Do you want to update the database with your BoggetDots card?")
             .setPositiveButton("Update") { _, _ ->
                 updateDatabaseWithCardData(card, idReversedHex)
             }
