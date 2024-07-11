@@ -11,6 +11,7 @@ import android.nfc.tech.MifareUltralight
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -171,34 +172,41 @@ class MainActivity : AppCompatActivity() {
 
         cardTitle?.text = cardInfo
 
-        val databaseReference = FirebaseDatabase.getInstance().reference
-        databaseReference.child(idReversedHex).get().addOnSuccessListener { dataSnapshot ->
-            if (dataSnapshot.exists()) {
-                showToast("Card found in database")
-                val firebaseCard = dataSnapshot.getValue(Card::class.java)
-
+        //Get firebase data
+        database.child(idReversedHex).get().addOnSuccessListener {
+            if (it.exists()) {
+                val firebaseCard = it.getValue(Card::class.java)
                 if (firebaseCard != null) {
+                    // Compare the card data with the Firebase data
                     val differences = mutableListOf<String>()
-
-                    if (firebaseCard.boggetID != card.boggetID) differences.add("Bogget ID")
-                    if (firebaseCard.cardType != card.cardType) differences.add("Card Type")
-                    if (firebaseCard.cardholder != card.cardholder) differences.add("Cardholder")
-                    if (firebaseCard.tampProtected != card.tampProtected) differences.add("TAMP Protected")
-                    if (firebaseCard.edots != card.edots) differences.add("eDots")
+                    if (card.boggetID != firebaseCard.boggetID) {
+                        differences.add("Bogget ID")
+                    }
+                    if (card.cardType != firebaseCard.cardType) {
+                        differences.add("Card Type")
+                    }
+                    if (card.cardholder != firebaseCard.cardholder) {
+                        differences.add("Cardholder")
+                    }
+                    if (card.tampProtected != firebaseCard.tampProtected) {
+                        differences.add("TAMP Protected")
+                    }
+                    if (card.edots != firebaseCard.edots) {
+                        differences.add("eDots")
+                    }
 
                     if (differences.isNotEmpty()) {
                         showOverwriteDialog(card, idReversedHex, differences)
-                    } else {
-                        showToast("Card data matches database records")
                     }
                 }
             } else {
-                showToast("Card not found in database")
                 promptToAddNewCard(card, idReversedHex)
             }
-        }.addOnFailureListener {
-            showToast("Failed to read from database")
         }
+            .addOnFailureListener { exception ->
+                Log.e("DatabaseRead", "Failed to read data from database", exception)
+                showToast("Failed to read data from database: ${exception.message}")
+            }
     }
 
     private fun showOverwriteDialog(card: Card, idReversedHex: String, differences: List<String>) {
