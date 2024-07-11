@@ -11,12 +11,14 @@ import android.nfc.tech.MifareUltralight
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.ganlouis.nfc.models.Card
@@ -27,7 +29,9 @@ import java.util.*
 import com.google.android.material.card.MaterialCardView
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.database
+import java.lang.Double.toHexString
 
 class MainActivity : AppCompatActivity() {
 
@@ -110,43 +114,146 @@ class MainActivity : AppCompatActivity() {
             NfcAdapter.ACTION_NDEF_DISCOVERED
         )
         if (intent.action in validActions) {
-            // TODO
+            val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG) ?: return
+            val idReversedHex = toReversedHex(tag.id)
+
+            // Read NDEF Message if available
             val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
             val messages = mutableListOf<NdefMessage>()
-            //if (rawMsgs != null) {
 
-            val sb = StringBuilder()
-
-            //for each item in messages, append to message
             if (rawMsgs != null) {
-                for (i in rawMsgs.indices) {
-                    val msg = rawMsgs?.get(i) as NdefMessage
-                    for (record in msg.records) {
-                        val payload = record.payload
-                        for (b in payload) {
-                            sb.append(String.format("%02X", b))
-                        }
+                for (rawMsg in rawMsgs) {
+                    if (rawMsg is NdefMessage) {
+                        messages.add(rawMsg)
                     }
                 }
             }
 
-            /*} else {*/
-                // Unknown tag type
-                val empty = ByteArray(0)
-                val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
-                val tag = intent.parcelable<Tag>(NfcAdapter.EXTRA_TAG) ?: return
-                val payload = dumpTagData(tag).toByteArray()
-                val record = NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload)
-                val msg = NdefMessage(arrayOf(record))
-                messages.add(msg)
+            if (messages.isNotEmpty()) {
+                // Process NDEF Message
+                val records = messages[0].records
+                if (records.size >= 5) {
+                    val card = Card(
+                        boggetID = String(records[0].payload, 3, records[0].payload.size - 3, Charsets.UTF_8),
+                        cardType = String(records[1].payload, 3, records[1].payload.size - 3, Charsets.UTF_8),
+                        cardholder = String(records[2].payload, 3, records[2].payload.size - 3, Charsets.UTF_8),
+                        tampProtected = String(records[3].payload, 3, records[3].payload.size - 3, Charsets.UTF_8).toBoolean(),
+                        edots = String(records[4].payload, 3, records[4].payload.size - 3, Charsets.UTF_8).toInt()
+                    )
 
-                val balance = Integer.parseInt(sb.toString().substring(0, 8), 16)
+                    // Display card information
+                    displayCardInfo(card, idReversedHex)
 
-                Card(toReversedHex(tag.id), "", "", false, balance)
-            //}
-            // Setup the views
+                    // TODO: Add code to match idReversedHex with Firebase database
+                } else {
+                    showToast("Insufficient records in NFC tag")
+                }
+            } else {
+                // Handle non-NDEF formatted tag
+                val tagData = dumpTagData(tag)
+                displayRawTagData(tagData, idReversedHex)
+            }
+
+            // Build views for all records (if any)
             buildTagViews(messages)
         }
+    }
+
+
+    private fun displayCardInfo(card: Card, idReversedHex: String) {
+        val cardInfo = """
+    ID (reversed hex): $idReversedHex
+    Bogget ID: ${card.boggetID}
+    Card Type: ${card.cardType}
+    Cardholder: ${card.cardholder}
+    TAMP Protected: ${card.tampProtected}
+    eDots: ${card.edots}
+    """.trimIndent()
+
+        cardTitle?.text = cardInfo
+
+        //Get firebase data
+        database.child(idReversedHex).get().addOnSuccessListener {
+            if (it.exists()) {
+                val firebaseCard = it.getValue(Card::class.java)
+                if (firebaseCard != null) {
+                    // Compare the card data with the Firebase data
+                    val differences = mutableListOf<String>()
+                    if (card.boggetID != firebaseCard.boggetID) {
+                        differences.add("Bogget ID")
+                    }
+                    if (card.cardType != firebaseCard.cardType) {
+                        differences.add("Card Type")
+                    }
+                    if (card.cardholder != firebaseCard.cardholder) {
+                        differences.add("Cardholder")
+                    }
+                    if (card.tampProtected != firebaseCard.tampProtected) {
+                        differences.add("TAMP Protected")
+                    }
+                    if (card.edots != firebaseCard.edots) {
+                        differences.add("eDots")
+                    }
+
+                    if (differences.isNotEmpty()) {
+                        showOverwriteDialog(card, idReversedHex, differences)
+                    }
+                }
+            } else {
+                promptToAddNewCard(card, idReversedHex)
+            }
+        }
+            .addOnFailureListener { exception ->
+                Log.e("DatabaseRead", "Failed to read data from database", exception)
+                showToast("Failed to read data from database: ${exception.message}")
+            }
+    }
+
+    private fun showOverwriteDialog(card: Card, idReversedHex: String, differences: List<String>) {
+        val diffString = differences.joinToString(", ")
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Sync Data")
+            .setMessage("The following fields differ from the database: $diffString. Do you want to overwrite the database with the NFC data?")
+            .setPositiveButton("Overwrite") { _, _ ->
+                updateDatabaseWithCardData(card, idReversedHex)
+            }
+            .setNegativeButton("Keep Database Data") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun updateDatabaseWithCardData(card: Card, idReversedHex: String) {
+        val databaseReference = FirebaseDatabase.getInstance().reference
+        databaseReference.child(idReversedHex).setValue(card)
+            .addOnSuccessListener {
+                showToast("Sync successful")
+            }
+            .addOnFailureListener {
+                showToast("Failed to update database")
+            }
+    }
+
+    private fun promptToAddNewCard(card: Card, idReversedHex: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("New Card")
+            .setMessage("Welcome to BoggetDots! Do you want to add this card to the database?")
+            .setPositiveButton("Add") { _, _ ->
+                updateDatabaseWithCardData(card, idReversedHex)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun displayRawTagData(tagData: String, idReversedHex: String) {
+        val displayText = "ID (reversed hex): $idReversedHex\n\n$tagData"
+        cardTitle?.text = displayText
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     /*private fun dumpTagData(tag: Tag): String {
