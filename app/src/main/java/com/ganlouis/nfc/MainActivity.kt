@@ -22,6 +22,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.text.HtmlCompat
 import com.ganlouis.nfc.models.Card
 import com.github.muellerma.nfc.record.ParsedNdefRecord
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -40,21 +41,41 @@ class MainActivity : AppCompatActivity() {
     private var cardTypeText: TextView? = null
     private var idReversedHexText: TextView? = null
     private var tampProtectedText: TextView? = null
+    private var boggetIdText: TextView? = null
     private var cardholderText: TextView? = null
     private var eDotsText: TextView? = null
 
     private lateinit var database: DatabaseReference
 
+    private lateinit var bottomNav: BottomNavigationView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        bottomNav = findViewById(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when(item.itemId) {
+                R.id.nav_home -> {
+                    // We're already on the home page
+                    true
+                }
+                R.id.nav_boggetdots -> {
+                    startActivity(Intent(this, BoggetDotsActivity::class.java))
+                    true
+                }
+                else -> false
+            }
+        }
+
         database = Firebase.database.reference
+
 
         cardContent = findViewById(R.id.card_view)
         cardTypeText = findViewById(R.id.card_type_text)
         idReversedHexText = findViewById(R.id.id_reversed_hex_text)
         tampProtectedText = findViewById(R.id.tamp_protected_text)
+        boggetIdText = findViewById(R.id.bogget_id_text)
         cardholderText = findViewById(R.id.cardholder_text)
         eDotsText = findViewById(R.id.edots_text)
 
@@ -168,6 +189,7 @@ class MainActivity : AppCompatActivity() {
         cardTypeText?.text = card.cardType
         idReversedHexText?.text = idReversedHex
         tampProtectedText?.text = "TAMP Protected: ${card.tampProtected}"
+        boggetIdText?.text = card.boggetID
         cardholderText?.text = card.cardholder
         eDotsText?.text = card.edots.toString()
 
@@ -189,6 +211,7 @@ class MainActivity : AppCompatActivity() {
             showToast("Failed to read data from database: ${exception.message}")
         }
     }
+
 
     private fun showOverwriteDialog(card: Card, firebaseCard: Card, idReversedHex: String) {
         val differences = mutableListOf<Pair<String, Pair<String, String>>>()
