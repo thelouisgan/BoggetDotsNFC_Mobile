@@ -208,20 +208,27 @@ class MainActivity : AppCompatActivity() {
         // Get firebase data
         database.child(idReversedHex).get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
-                val firebaseCard = snapshot.getValue(Card::class.java)
-                if (firebaseCard != null) {
-                    if (card != firebaseCard) {
-                        showOverwriteDialog(card, firebaseCard, idReversedHex)
-                    } else {
-                        showToast("Card data matches database")
+                try {
+                    val firebaseCard = snapshot.getValue(Card::class.java)
+                    if (firebaseCard != null) {
+                        if (card != firebaseCard) {
+                            showOverwriteDialog(card, firebaseCard, idReversedHex)
+                        } else {
+                            showToast("Card data matches database")
+                        }
                     }
+                } catch (e: Exception) {
+                    showToast("Error reading card data: ${e.message}")
+                    promptToAddNewCard(card, idReversedHex)
                 }
             } else {
                 promptToAddNewCard(card, idReversedHex)
             }
         }.addOnFailureListener { exception ->
             showToast("Failed to read data from database: ${exception.message}")
+            promptToAddNewCard(card, idReversedHex)
         }
+
     }
 
 
@@ -277,12 +284,22 @@ class MainActivity : AppCompatActivity() {
             .setTitle("New Card")
             .setMessage("Welcome to BoggetDots! Do you want to add this card to the database?")
             .setPositiveButton("Add") { _, _ ->
-                updateDatabaseWithCardData(card, idReversedHex)
+                addNewCardToDatabase(card, idReversedHex)
             }
             .setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
+    }
+
+    private fun addNewCardToDatabase(card: Card, idReversedHex: String) {
+        database.child(idReversedHex).setValue(card)
+            .addOnSuccessListener {
+                showToast("New card added successfully")
+            }
+            .addOnFailureListener { e ->
+                showToast("Failed to add new card: ${e.message}")
+            }
     }
 
     private fun displayRawTagData(tagData: String, idReversedHex: String) {
