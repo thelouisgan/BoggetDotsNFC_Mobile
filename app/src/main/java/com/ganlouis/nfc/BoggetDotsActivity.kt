@@ -6,6 +6,7 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.tech.Ndef
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -76,17 +77,7 @@ class BoggetDotsActivity : AppCompatActivity() {
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
-            intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)?.also { rawMessages ->
-                val messages: List<NdefMessage> = rawMessages.map { it as NdefMessage }
-                processNfcTag(messages)
-            }
-        }
-    }
-
-    private fun processNfcTag(messages: List<NdefMessage>) {
+    private fun processNfcTag(tag: Tag, messages: List<NdefMessage>) {
         if (messages.isNotEmpty() && messages[0].records.size >= 5) {
             val records = messages[0].records
             val card = Card(
@@ -101,14 +92,54 @@ class BoggetDotsActivity : AppCompatActivity() {
                 if (card.edots >= product.price) {
                     card.edots -= product.price
                     updateCardInDatabase(card)
-                    updateNfcTag(messages[0], card)
-                    showToast("Purchase successful! Remaining eDots: ${card.edots}")
+                    if (writeUpdatedCardToTag(tag, card, messages[0])) {
+                        showToast("Purchase successful! Remaining eDots: ${card.edots}")
+                    } else {
+                        showToast("Purchase failed. Please try again.")
+                    }
                 } else {
                     showToast("Insufficient eDots. Current balance: ${card.edots}")
                 }
             }
         } else {
             showToast("Invalid card data")
+        }
+    }
+
+    private fun writeUpdatedCardToTag(tag: Tag, card: Card, originalMessage: NdefMessage): Boolean {
+        try {
+            val ndef = Ndef.get(tag) ?: return false
+
+            if (!ndef.isWritable) {
+                showToast("Tag is not writable")
+                return false
+            }
+
+            val updatedRecords = originalMessage.records.toMutableList()
+            updatedRecords[4] = NdefRecord.createTextRecord(null, card.edots.toString())
+
+            val updatedMessage = NdefMessage(updatedRecords.toTypedArray())
+
+            ndef.connect()
+            ndef.writeNdefMessage(updatedMessage)
+            ndef.close()
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showToast("Error writing to tag: ${e.message}")
+            return false
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
+            val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+            intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)?.also { rawMessages ->
+                val messages: List<NdefMessage> = rawMessages.map { it as NdefMessage }
+                tag?.let { processNfcTag(it, messages) }
+            }
         }
     }
 

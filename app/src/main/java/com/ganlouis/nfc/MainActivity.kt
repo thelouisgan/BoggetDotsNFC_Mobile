@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Sync Cards")
             .setView(dialogView)
-            .setIcon(R.drawable.ic_boggetdots) // Add this line to set the icon
+            .setIcon(R.drawable.ic_boggetdots)
             .setMessage("Your BoggetDots Membership Card has some newer records. Do you want to update the database with your BoggetDots card?")
             .setPositiveButton("Update") { _, _ ->
                 updateDatabaseWithCardData(card, idReversedHex)
