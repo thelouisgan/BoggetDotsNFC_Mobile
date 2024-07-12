@@ -53,6 +53,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        database = FirebaseDatabase.getInstance().reference
+
+        cardContent = findViewById(R.id.card_view)
+        cardTypeText = findViewById(R.id.card_type_text)
+        idReversedHexText = findViewById(R.id.id_reversed_hex_text)
+        tampProtectedText = findViewById(R.id.tamp_protected_text)
+        boggetIdText = findViewById(R.id.bogget_id_text)
+        cardholderText = findViewById(R.id.cardholder_text)
+        eDotsText = findViewById(R.id.edots_text)
+
+        tagList = findViewById<View>(R.id.list) as LinearLayout
+        resolveIntent(intent)
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        if (nfcAdapter == null) {
+            showNoNfcDialog()
+            return
+        }
+
         bottomNav = findViewById(R.id.bottomNav)
         bottomNav?.menu?.findItem(R.id.nav_home)?.isChecked = true
         bottomNav.setOnItemSelectedListener { item ->

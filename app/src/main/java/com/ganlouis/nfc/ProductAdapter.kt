@@ -27,7 +27,7 @@ class ProductAdapter(
 
         fun bind(product: Product, isSelected: Boolean) {
             nameTextView.text = product.name
-            priceTextView.text = "${product.price} eDots"
+            priceTextView.text = "${product.price} BoggetDots"
             Glide.with(itemView.context).load(product.imageUrl).into(imageView)
 
             cardView.background = ContextCompat.getDrawable(
