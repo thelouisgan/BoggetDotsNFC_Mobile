@@ -22,6 +22,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.text.HtmlCompat
 import com.ganlouis.nfc.models.Card
 import com.github.muellerma.nfc.record.ParsedNdefRecord
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,11 +47,29 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var database: DatabaseReference
 
+    private lateinit var bottomNav: BottomNavigationView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        bottomNav = findViewById(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when(item.itemId) {
+                R.id.nav_home -> {
+                    // We're already on the home page
+                    true
+                }
+                R.id.nav_boggetdots -> {
+                    startActivity(Intent(this, BoggetDotsActivity::class.java))
+                    true
+                }
+                else -> false
+            }
+        }
+
         database = Firebase.database.reference
+
 
         cardContent = findViewById(R.id.card_view)
         cardTypeText = findViewById(R.id.card_type_text)
