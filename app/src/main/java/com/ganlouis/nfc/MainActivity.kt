@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         bottomNav = findViewById(R.id.bottomNav)
+        bottomNav?.menu?.findItem(R.id.nav_home)?.isChecked = true
         bottomNav.setOnItemSelectedListener { item ->
             when(item.itemId) {
                 R.id.nav_home -> {
@@ -61,34 +62,27 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_boggetdots -> {
-                    startActivity(Intent(this, BoggetDotsActivity::class.java))
+                    bottomNav?.menu?.findItem(R.id.nav_boggetdots)?.isChecked = true
+                    val intent = Intent(this, BoggetDotsActivity::class.java)
+                    startActivity(intent)
+                    overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                     true
                 }
                 else -> false
             }
         }
 
-        database = Firebase.database.reference
+        // Set the home item as active when MainActivity is created
+        updateActiveNavItem(R.id.nav_home)
+    }
 
-
-        cardContent = findViewById(R.id.card_view)
-        cardTypeText = findViewById(R.id.card_type_text)
-        idReversedHexText = findViewById(R.id.id_reversed_hex_text)
-        tampProtectedText = findViewById(R.id.tamp_protected_text)
-        boggetIdText = findViewById(R.id.bogget_id_text)
-        cardholderText = findViewById(R.id.cardholder_text)
-        eDotsText = findViewById(R.id.edots_text)
-
-        tagList = findViewById<View>(R.id.list) as LinearLayout
-        resolveIntent(intent)
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
-        if (nfcAdapter == null) {
-            showNoNfcDialog()
-            return
-        }
+    private fun updateActiveNavItem(itemId: Int) {
+        bottomNav.menu.findItem(itemId)?.isChecked = true
     }
 
     override fun onResume() {
+        bottomNav = findViewById(R.id.bottomNav)
+        bottomNav?.menu?.findItem(R.id.nav_home)?.isChecked = true
         super.onResume()
         if (nfcAdapter?.isEnabled == false) {
             openNfcSettings()

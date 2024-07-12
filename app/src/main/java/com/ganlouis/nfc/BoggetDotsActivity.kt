@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ganlouis.nfc.models.Card
 import com.ganlouis.nfc.models.Product
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.firebase.database.FirebaseDatabase
@@ -26,9 +27,30 @@ class BoggetDotsActivity : AppCompatActivity() {
     private var selectedProduct: Product? = null
     private var nfcAdapter: NfcAdapter? = null
 
+    private lateinit var bottomNav: BottomNavigationView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_boggetdots)
+
+        bottomNav = findViewById(R.id.bottomNav)
+        bottomNav?.menu?.findItem(R.id.nav_boggetdots)?.isChecked = true
+        bottomNav.setOnItemSelectedListener { item ->
+            when(item.itemId) {
+                R.id.nav_home -> {
+                    bottomNav?.menu?.findItem(R.id.nav_home)?.isChecked = true
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                    overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+                    true
+                }
+                R.id.nav_boggetdots -> {
+                    // Already in BoggetDotsActivity, no need to start a new activity
+                    true
+                }
+                else -> false
+            }
+        }
 
         productRecyclerView = findViewById(R.id.productRecyclerView)
         purchaseFab = findViewById(R.id.purchaseFab)
@@ -37,6 +59,12 @@ class BoggetDotsActivity : AppCompatActivity() {
         setupPurchaseFab()
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+    }
+
+    override fun onResume() {
+        bottomNav = findViewById(R.id.bottomNav)
+        bottomNav?.menu?.findItem(R.id.nav_boggetdots)?.isChecked = true
+        super.onResume()
     }
 
     private fun setupRecyclerView() {
