@@ -80,10 +80,13 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_boggetdots -> {
-                    bottomNav?.menu?.findItem(R.id.nav_boggetdots)?.isChecked = true
                     val intent = Intent(this, BoggetDotsActivity::class.java)
                     startActivity(intent)
-                    overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+                    true
+                }
+                R.id.nav_earn -> {
+                    val intent = Intent(this, EarnActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 else -> false

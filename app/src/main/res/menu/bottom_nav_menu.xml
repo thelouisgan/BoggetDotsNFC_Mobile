@@ -6,6 +6,10 @@
             android:title="Home" />
     <item
             android:id="@+id/nav_boggetdots"
-            android:icon="@drawable/ic_boggetdots"
-            android:title="BoggetDots" />
+            android:icon="@drawable/ic_shopping_cart"
+            android:title="Shop" />
+    <item
+            android:id="@+id/nav_earn"
+            android:icon="@drawable/ic_banknote"
+            android:title="Earn" />
 </menu>

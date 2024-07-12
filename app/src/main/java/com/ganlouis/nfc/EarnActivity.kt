@@ -19,10 +19,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.firebase.database.FirebaseDatabase
 
-class BoggetDotsActivity : AppCompatActivity() {
+class EarnActivity : AppCompatActivity() {
 
     private lateinit var productRecyclerView: RecyclerView
-    private lateinit var purchaseFab: ExtendedFloatingActionButton
+    private lateinit var earnFab: ExtendedFloatingActionButton
     private lateinit var productAdapter: ProductAdapter
     private var selectedProduct: Product? = null
     private var nfcAdapter: NfcAdapter? = null
@@ -31,25 +31,22 @@ class BoggetDotsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_boggetdots)
+        setContentView(R.layout.activity_earn)
 
         bottomNav = findViewById(R.id.bottomNav)
-        bottomNav?.menu?.findItem(R.id.nav_boggetdots)?.isChecked = true
+        bottomNav.menu.findItem(R.id.nav_earn)?.isChecked = true
         bottomNav.setOnItemSelectedListener { item ->
             when(item.itemId) {
                 R.id.nav_home -> {
-                    bottomNav?.menu?.findItem(R.id.nav_home)?.isChecked = true
-                    val intent = Intent(this, MainActivity::class.java)
-                    startActivity(intent)
+                    startActivity(Intent(this, MainActivity::class.java))
                     true
                 }
                 R.id.nav_boggetdots -> {
-                    // Already in BoggetDotsActivity, no need to start a new activity
+                    startActivity(Intent(this, BoggetDotsActivity::class.java))
                     true
                 }
                 R.id.nav_earn -> {
-                    val intent = Intent(this, EarnActivity::class.java)
-                    startActivity(intent)
+                    // Already in EarnActivity, no need to start a new activity
                     true
                 }
                 else -> false
@@ -57,42 +54,42 @@ class BoggetDotsActivity : AppCompatActivity() {
         }
 
         productRecyclerView = findViewById(R.id.productRecyclerView)
-        purchaseFab = findViewById(R.id.purchaseFab)
+        earnFab = findViewById(R.id.earnFab)
 
         setupRecyclerView()
-        setupPurchaseFab()
+        setupEarnFab()
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
     }
 
     override fun onResume() {
         bottomNav = findViewById(R.id.bottomNav)
-        bottomNav?.menu?.findItem(R.id.nav_boggetdots)?.isChecked = true
+        bottomNav?.menu?.findItem(R.id.nav_earn)?.isChecked = true
         super.onResume()
     }
 
     private fun setupRecyclerView() {
         productAdapter = ProductAdapter(getProducts()) { product ->
             selectedProduct = product
-            purchaseFab.show()
+            earnFab.show()
         }
         productRecyclerView.layoutManager = GridLayoutManager(this, 2)
         productRecyclerView.adapter = productAdapter
     }
 
-    private fun setupPurchaseFab() {
-        purchaseFab.hide()
-        purchaseFab.setOnClickListener {
+    private fun setupEarnFab() {
+        earnFab.hide()
+        earnFab.setOnClickListener {
             selectedProduct?.let { product ->
-                showPurchaseDialog(product)
+                showEarnDialog(product)
             }
         }
     }
 
-    private fun showPurchaseDialog(product: Product) {
+    private fun showEarnDialog(product: Product) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Purchase ${product.name}")
-            .setMessage("Please tap your BoggetDots card to complete the purchase.")
+            .setTitle("Earn ${product.name}")
+            .setMessage("Please tap your BoggetDots card to earn eDots.")
             .setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss()
                 enableNfcForegroundDispatch()
@@ -121,16 +118,12 @@ class BoggetDotsActivity : AppCompatActivity() {
             )
 
             selectedProduct?.let { product ->
-                if (card.edots >= product.price) {
-                    card.edots -= product.price
-                    updateCardInDatabase(card)
-                    if (writeUpdatedCardToTag(tag, card, messages[0])) {
-                        showToast("Purchase successful! Remaining eDots: ${card.edots}")
-                    } else {
-                        showToast("Purchase failed. Please try again.")
-                    }
+                card.edots += product.price
+                updateCardInDatabase(card)
+                if (writeUpdatedCardToTag(tag, card, messages[0])) {
+                    showToast("eDots earned successfully! New balance: ${card.edots}")
                 } else {
-                    showToast("Insufficient eDots. Current balance: ${card.edots}")
+                    showToast("Failed to update card. Please try again.")
                 }
             }
         } else {
@@ -180,33 +173,22 @@ class BoggetDotsActivity : AppCompatActivity() {
         database.child(card.boggetID).setValue(card)
     }
 
-    private fun updateNfcTag(message: NdefMessage, card: Card) {
-        val records = message.records
-        records[4] = NdefRecord.createTextRecord(null, card.edots.toString())
-        val updatedMessage = NdefMessage(records)
-        // Write the updated message to the NFC tag
-        // Note: This part requires additional implementation to write to the NFC tag
-    }
-
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun getProducts(): List<Product> {
         return listOf(
-            Product("5 minutes", 4, "https://ganlouis.com/wp-content/uploads/2023/08/NEW5PHONE.png"),
-            Product("10 minutes", 7, "https://ganlouis.com/wp-content/uploads/2023/08/NEW10PHONE.png"),
-            Product("30 minutes", 18, "https://ganlouis.com/wp-content/uploads/2023/08/NEW30PHONE.png"),
-            Product("1 hour", 33, "https://ganlouis.com/wp-content/uploads/2023/08/NEW1HPHONE.png"),
-            Product("Minecraft 10 minutes", 12, "https://ganlouis.com/wp-content/uploads/2023/08/MC10.png"),
-            Product("Minecraft 30 minutes", 30, "https://ganlouis.com/wp-content/uploads/2023/08/MC30.png"),
-            Product("Minecraft 1 hour", 50, "https://ganlouis.com/wp-content/uploads/2023/08/MC1H.png"),
-            Product("Massage Economy", 10, "https://ganlouis.com/wp-content/uploads/2023/08/ECONOMY-1.png"),
-            Product("Massage Premium", 19, "https://ganlouis.com/wp-content/uploads/2023/08/PREMIUM-1.png"),
-            Product("Massage Platinum King Deluxe Tent", 50, "https://ganlouis.com/wp-content/uploads/2023/08/KINGTENT.png"),
-            Product("Bogget Bus", 10, "https://ganlouis.com/wp-content/uploads/2023/08/BB.png"),
-            Product("Bogget Bus Yummy", 13, "https://ganlouis.com/wp-content/uploads/2023/08/BBB.png"),
-            Product("Fun Pass", 3, "https://ganlouis.com/wp-content/uploads/2023/08/FP.png")
+            Product("1 Minute Massage", 3, "https://ganlouis.com/wp-content/uploads/2023/08/M1.png"),
+            Product("5 Minute Massage", 8, "https://ganlouis.com/wp-content/uploads/2023/08/M5.png"),
+            Product("10 Minute Massage", 30, "https://ganlouis.com/wp-content/uploads/2023/08/M10.png"),
+            Product("25 Minute Massage", 50, "https://ganlouis.com/wp-content/uploads/2023/08/M25.png"),
+            Product("1 BoggetDot", 1, "https://ganlouis.com/wp-content/uploads/2023/08/B1.png"),
+            Product("3 BoggetDots", 3, "https://ganlouis.com/wp-content/uploads/2023/08/B3.png"),
+            Product("5 BoggetDots", 5, "https://ganlouis.com/wp-content/uploads/2023/08/B5.png"),
+            Product("10 BoggetDots", 10, "https://ganlouis.com/wp-content/uploads/2023/08/B10.png"),
+            Product("Find My Device", 6, "https://ganlouis.com/wp-content/uploads/2023/08/findmy.png"),
+            Product("New Candace Book", 6, "https://ganlouis.com/wp-content/uploads/2023/08/cbph.png")
         )
     }
 }
